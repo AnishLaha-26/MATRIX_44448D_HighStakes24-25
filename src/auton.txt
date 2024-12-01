@@ -1,0 +1,18 @@
+// Set the initial robot pose
+    chassis.setPose(0, 0, 0);
+   // Move to the point (0, -11) using the back of the robot while wating to get ther 
+    chassis.moveToPoint(0, -11.5, 3000, {.forwards = false}, false); // Move to point using the back of the robot
+    //go to alliance stake 
+    // Swing the robot to face -90 degrees
+    chassis.turnToHeading(-90, 1500); // Adjust timeout as needed
+    float currentY = chassis.getPose().y;
+    chassis.moveToPoint(10, currentY, 3000, {.forwards = false}, false); 
+
+   // chassis.moveToPoint(8, 0, 3000, {.forwards = false}, false); 
+    intake1.move_relative(-450, 600); // Move intake1 360 degrees
+    intake2.move_relative(-450, 600); // Move intake2 360 degrees
+     // Wait for the motors to complete their movement
+    while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
+           fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
+        pros::delay(10); // Check every 10ms
+    }

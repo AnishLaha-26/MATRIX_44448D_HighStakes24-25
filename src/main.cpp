@@ -77,6 +77,7 @@ lemlib::ControllerSettings
                        500,  // large error range timeout, in milliseconds
                        20   // maximum acceleration (slew)
     );
+    
 
 // Angular controller tuned
 lemlib::ControllerSettings
@@ -134,6 +135,14 @@ void initialize() {
   pros::lcd::initialize(); // initialize brain screen
   pros::Motor motor(1, pros::v5::MotorGears::blue,
                     pros::v5::MotorUnits::degrees);
+
+  // imu.reset(); // Reset the IMU to recalibrate
+
+  //   // Wait until the IMU finishes calibrating
+  //   while (imu.is_calibrating()) {
+  //       pros::delay(10); // Delay to prevent spamming CPU
+  //   }
+
   chassis.calibrate(); // calibrate sensors
 
 
@@ -164,12 +173,15 @@ void initialize() {
 /**
  * Runs while the robot is disabled
  */
-void disabled() {}
+void disabled() {
+}
 
 /**
  * runs after initialize if the robot is connected to field control
  */
-void competition_initialize() {}
+void competition_initialize() {
+ // chassis.calibrate(); 
+}
 
 // get a path used for pure pursuit
 // this needs to be put outside a function
@@ -219,46 +231,142 @@ void doinkerToggle(){
 
 
 void autonomous() {
-  //       //put this after op control
-  //   doinkerToggle();
-  chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
-    chassis.moveToPoint(0,-17,1000,{.forwards = false}, false); //initial move forward to clear rings
-    chassis.moveToPoint(0,-10,1000,{.forwards = true}, false); // //move back to allow robot to have space to turn (for wall stake)
-    chassis.moveToPose(
-        18,                 // x-coordinate
-        -11,                 // y-coordinate
-        -93,                // theta (heading in degrees)
-        1600,               // timeout in milliseconds
-        {.forwards = false, .horizontalDrift = 8, .lead = 0.6,}      
-    ); // boomerang algorithm to perform curved turn to wall stake scoring location.
-    
-    chassis.moveToPoint(18.5, -8 ,1000, {.forwards = false}, false); //move forward to score wall stake
 
-    intake1.move_relative(-375, 600); // Move intake1 360 degrees
-    intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
+chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
+  doinker.set_value(true);
+  DoinkerCheck = true;
+  chassis.moveToPoint(0, -15,500, {.forwards = false}, false); //move fo rward to the alliance wall stake
+  chassis.moveToPoint(0, -13,200, {.forwards = true}, false); //move back from the wall to allow turning
+
+  chassis.turnToHeading(90,500); //turn to face allaince wall stake
+  chassis.moveToPoint(-17, -8,500, {.forwards = false}, false); //(CHANGE FOR FEILDS) move to the wall to score ring (CHANGE FOR FEILDS)
+
+  intake1.move_relative(-375, 600); // Move intake1 360 degrees
+  intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
      // Wait for the motors to complete their movement
     while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
            fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
         pros::delay(10); // Check every 10ms
-   }
-  
+           }
+ chassis.moveToPoint(-5, -6,700, {.forwards = true}, false); //move forward to allow turing to MOGO
 
-  // chassis.moveToPoint(13, 0,1000, {.forwards = false}, false); //move back from the wall to allow turning
-  // chassis.turnToHeading(-134,500); //turn to collect the other rings
-  // doinkerToggle();
-  // intake1.move_velocity(-600); //turn on intake to start collecting rings
-  // intake2.move_velocity(-600);
-  // chassis.moveToPoint(-13, -46,1750, {.forwards = true}, false); //move to this set point (ensuring rings are collected)
-  // intake1.move_velocity(0);
-  // intake2.move_velocity(0);
+mogoMech.set_value(true);
+chassis.turnToHeading(-119, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+chassis.moveToPoint(20,12,700, {.forwards = false}, false); 
+chassis.turnToHeading(-122, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+pros::delay(500); // Wait for robot to allign to mogo
+leftMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_HOLD);
+rightMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_HOLD);
+mogoMech.set_value(false); // clamp mogo
+pros::delay(500); // Wait for mogo to be settled
+leftMotors.move_voltage(12000);
+rightMotors.move_voltage(12000);
+pros::delay(500);
+leftMotors.move_voltage(-12000);
+rightMotors.move_voltage(-12000);
+pros::delay(500);
+leftMotors.move_voltage(12000);
+rightMotors.move_voltage(12000);
+pros::delay(500);
+leftMotors.move_voltage(-12000);
+rightMotors.move_voltage(-12000);
+pros::delay(500);
+leftMotors.move_voltage(0);
+rightMotors.move_voltage(0);
 
-  // chassis.moveToPoint(-8, -33,1000, {.forwards = false}, false);
-  // // chassis.turnToHeading(-241,1000);
-  // // mogoToggle();
-  // // chassis.moveToPoint(-21, -37,1000, {.forwards = false}, false);
-  // // mogoToggle();
-  // // intake1.move_velocity(-600); //turn on intake to start collecting rings
-  // // intake2.move_velocity(-600);
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.turnToHeading(17,500); //turn to face allaince wall stake
+// chassis.moveToPoint(24,29,1000, {.forwards = true}, false); 
+
+//ABOVE HERE
+
+//   chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
+//   doinker.set_value(true);
+//   DoinkerCheck = true;
+//   chassis.moveToPoint(0, -17,1000, {.forwards = false}, false); //move fo rward to the alliance wall stake
+//   chassis.moveToPoint(0, -13,1000, {.forwards = true}, false); //move back from the wall to allow turning
+
+//   chassis.turnToHeading(90,500); //turn to face allaince wall stake
+//   chassis.moveToPoint(-17, -8,1000, {.forwards = false}, false); //(CHANGE FOR FEILDS) move to the wall to score ring (CHANGE FOR FEILDS)
+
+//   intake1.move_relative(-375, 600); // Move intake1 360 degrees
+//   intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
+//      // Wait for the motors to complete their movement
+//     while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
+//            fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
+//         pros::delay(10); // Check every 10ms
+//            }
+//  chassis.moveToPoint(-5, -6,1200, {.forwards = true}, false); //move forward to allow turing to MOGO
+
+// mogoMech.set_value(true);
+// chassis.turnToHeading(-119, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+// chassis.moveToPoint(19,12,1000, {.forwards = false}, false); 
+// chassis.turnToHeading(-122, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+
+// chassis.moveToPoint(24.5,13.5,1000, {.forwards = false}, false); 
+// mogoMech.set_value(false); // clamp mogo
+
+
+// pros::delay(400); // Wait for mogo to be settled
+// leftMotors.move_voltage(12000);
+// rightMotors.move_voltage(12000);
+// pros::delay(300);
+// leftMotors.move_voltage(-12000);
+// rightMotors.move_voltage(-12000);
+// pros::delay(300);
+
+// chassis.turnToHeading(8,500); //turn to face rings
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.moveToPoint(24,28,1000, {.forwards = true}, false);  // move to first ring
+// pros::delay(3000);
+// intake1.move_velocity(0);
+// intake2.move_velocity(0); 
+
+//27 37 tun to 81
+// chassis.moveToPoint(31, 45, 1000);
+// chassis.turnToHeading(180, 1000);
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.moveToPoint(31, 38, 1000);
+//28, 41, 180
+// chassis.turnToHeading(95,500); //turn to face rings
+// chassis.moveToPoint(34,35,1000, {.forwards = true}, false); //move to intake 2nd ring
+// pros::delay(200);
+// chassis.moveToPoint(26,31,1000, {.forwards = false}, false);
+// chassis.turnToHeading(60,500); //turn to face rings
+// chassis.moveToPoint(35,34,1000, {.forwards = true}, false); //move to intake 3rd ring
+// pros::delay(600);
+// intake1.move_velocity(0);
+// intake2.move_velocity(0); 
+
+
+// mogoMech.set_value(true); // release mogo
+
+// chassis.moveToPoint(29,31,1000, {.forwards = false}, false);
+// chassis.turnToHeading(-13,500); //turn toward second mogo
+// chassis.moveToPoint(43,14,1000, {.forwards = false}, false);
+// chassis.turnToHeading(44,500);
+// chassis.moveToPoint(13,-39,1000, {.forwards = false}, false);
+// mogoMech.set_value(false); // clamp mogo
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600);
+// chassis.moveToPoint(21,-24,1000, {.forwards = false}, false);
+
+
+
+
+
+
+
+
+
+
+
+//tunr to heading 0 dgo back To 41, 30 tunr to 62 then back 38, 34 mogo turn to heading 190 run intake
+
+
 
 }
 
@@ -269,56 +377,93 @@ void autonomous() {
 
 void opcontrol() {
 
-  // chassis.moveToPoint(-21, -37,1000, {.forwards = false}, false);
-  // mogoToggle();
-  // intake1.move_velocity(-600); //turn on intake to start collecting rings
-  // intake2.move_velocity(-600);
-  // //       //put this after op control
-  //   //doinkerToggle();
-  //   chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
-  //   chassis.moveToPoint(0,-17,1000,{.forwards = false}, false); //initial move forward to clear rings
-  //   chassis.moveToPoint(0,-10,1000,{.forwards = true}, false); // //move back to allow robot to have space to turn (for wall stake)
-  //   chassis.moveToPose(
-  //       18,                 // x-coordinate
-  //       -11,                 // y-coordinate
-  //       -93,                // theta (heading in degrees)
-  //       1600,               // timeout in milliseconds
-  //       {.forwards = false, .horizontalDrift = 8, .lead = 0.6,}      
-  //   ); // boomerang algorithm to perform curved turn to wall stake scoring location.
-    
-  //   chassis.moveToPoint(18.5, -8 ,1000, {.forwards = false}, false); //move forward to score wall stake
 
-  //   intake1.move_relative(-375, 600); // Move intake1 360 degrees
-  //   intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
-  //      while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
-  //          fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
-  //       pros::delay(10); // Check every 10ms
-  //  }
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.turnToHeading(17,500); //turn to face allaince wall stake
+// chassis.moveToPoint(24,29,1000, {.forwards = true}, false); 
+// pros::delay(10000); // Wait for mogo to be settled
 
-  // chassis.moveToPoint(13, 0,1000, {.forwards = false}, false); //move back from the wall to allow turning
-  // chassis.turnToHeading(-134,500); //turn to collect the other rings
-  // doinkerToggle();
-  // intake1.move_velocity(-600); //turn on intake to start collecting rings
-  // intake2.move_velocity(-600);
-  // chassis.moveToPoint(-13, -46,1500, {.forwards = true}, false); //move to this set point (ensuring rings are collected)
-  // intake1.move_velocity(0);
-  // intake2.move_velocity(0);
+// chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
+//   doinker.set_value(true);
+//   DoinkerCheck = true;
+//   chassis.moveToPoint(0, -15,500, {.forwards = false}, false); //move fo rward to the alliance wall stake
+//   chassis.moveToPoint(0, -13,200, {.forwards = true}, false); //move back from the wall to allow turning
 
-  // chassis.moveToPoint(-10, -40,1700, {.forwards = false}, false);
-  // chassis.turnToHeading(-241,1700);
-  // mogoToggle();
-  // // chassis.moveToPoint(-20, -36,1000, {.forwards = false}, false);
-  // // mogoToggle();
-  // // intake1.move_velocity(-600); //turn on intake to start collecting rings
-  // // intake2.move_velocity(-600);
+//   chassis.turnToHeading(90,500); //turn to face allaince wall stake
+//   chassis.moveToPoint(-17, -8,500, {.forwards = false}, false); //(CHANGE FOR FEILDS) move to the wall to score ring (CHANGE FOR FEILDS)
 
-  //   //ABOVE HERE
+//   intake1.move_relative(-375, 600); // Move intake1 360 degrees
+//   intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
+//      // Wait for the motors to complete their movement
+//     while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
+//            fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
+//         pros::delay(10); // Check every 10ms
+//            }
+//  chassis.moveToPoint(-5, -6,700, {.forwards = true}, false); //move forward to allow turing to MOGO
+
+// mogoMech.set_value(true);
+// chassis.turnToHeading(-119, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+// chassis.moveToPoint(20,12,700, {.forwards = false}, false); 
+// chassis.turnToHeading(-122, 700, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+
+// chassis.moveToPoint(25,14,500, {.forwards = false}, false); 
+// mogoMech.set_value(false); // clamp mogo
+
+
+// pros::delay(400); // Wait for mogo to be settled
+
+
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.turnToHeading(17,500); //turn to face allaince wall stake
+// chassis.moveToPoint(24,29,1000, {.forwards = true}, false); 
 
 
 
-  //controller
-  // loop to continuously update motors
-  //chassis.setPose(0, 0, 0);
+// chassis.moveToPoint(37,19,500, {.forwards = false}, false); 
+// chassis.turnToHeading(-11,500); //turn to face allaince wall stake
+// chassis.moveToPoint(30,28,500, {.forwards = true}, false); 
+// pros::delay(30000);
+
+
+
+
+//36 24 tun to 30 move to 41 28 turn to heading -61 move to 41 33  turn to 137 move to 9 1 drop mogo move 
+//to 5 -10 turn to -55 move to 20 -30 mogo clamp wiggle spin intake doinker down turn to -9
+
+// chassis.turnToHeading(8,500); //turn to face rings
+// intake1.move_velocity(-600);
+// intake2.move_velocity(-600); // Intake starts spinning
+// chassis.moveToPoint(24,28,1000, {.forwards = true}, false);  // move to first ring
+// pros::delay(3000);
+// intake1.move_velocity(0);
+// intake2.move_velocity(0); 
+
+
+//   chassis.setPose(0, 0, 0); //this is intial set position (robot start zone)
+//   chassis.turnToHeading(720,10000);
+//   chassis.moveToPoint(0, -20,1000, {.forwards = false}, false); //move fo rward to the alliance wall stake
+//   chassis.moveToPoint(0, -13,1000, {.forwards = true}, false); //move back from the wall to allow turning
+
+//   chassis.turnToHeading(90,500); //turn to face allaince wall stake
+//   chassis.moveToPoint(-17, -8,1000, {.forwards = false}, false); //(CHANGE FOR FEILDS) move to the wall to score ring (CHANGE FOR FEILDS)
+
+//   intake1.move_relative(-375, 600); // Move intake1 360 degrees
+//   intake2.move_relative(-375, 600); // Move intake2 360 degrees (places ring onto wall stake)
+//      // Wait for the motors to complete their movement
+//     while (fabs(intake1.get_position() - intake1.get_target_position()) > 5 || 
+//            fabs(intake2.get_position() - intake2.get_target_position()) > 5) {
+//         pros::delay(10); // Check every 10ms
+//            }
+
+//  chassis.moveToPoint(-5, -6,1200, {.forwards = true}, false); //move forward to allow turing to MOGO
+
+// chassis.turnToHeading(-119, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 100});
+
+
+
+
   while (true) {
 
     //DRIVE CHASSSIS CODE
